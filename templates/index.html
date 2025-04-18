@@ -1,24 +1,26 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Python to Flowchart</title>
+    <link rel="stylesheet" href="/static/style.css">
     <script type="module">
-        import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
         mermaid.initialize({ startOnLoad: true });
     </script>
 </head>
 <body>
-    <h2>Python to Flowchart</h2>
+    <h1>Python Code to Flowchart</h1>
     <form method="POST">
-        <textarea name="code" rows="15" cols="70" placeholder="Enter Python code here...">{{ code }}</textarea><br>
-        <button type="submit">Convert</button>
+        <textarea name="code" placeholder="Paste Python code here...">{{ code }}</textarea><br>
+        <button type="submit">Generate Flowchart</button>
     </form>
 
     {% if mermaid_code %}
-        <hr>
-        <div class="mermaid">
-            {{ mermaid_code }}
-        </div>
+    <h2>Flowchart:</h2>
+    <div class="mermaid">
+        {{ mermaid_code }}
+    </div>
     {% endif %}
 </body>
 </html>
