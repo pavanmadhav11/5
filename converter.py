@@ -62,9 +62,12 @@ class MermaidFlowchartConverter(ast.NodeVisitor):
         iter_code = f"for {loop_var} in {ast.unparse(node.iter)}"
         loop_node = self.add_node(iter_code)
         self.prev_node = loop_node
+        
+        # Handle the loop body (which may contain multiple statements)
         for stmt in node.body:
             self.visit(stmt)
-        self.lines.append(f"{self.prev_node} --> {loop_node}")
+        
+        self.lines.append(f"{self.prev_node} --> {loop_node}")  # To loop back
 
     def visit_FunctionDef(self, node):
         self.add_node(f"Function: {node.name}()")
