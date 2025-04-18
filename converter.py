@@ -2,7 +2,7 @@ import ast
 import html
 
 def sanitize_label(label):
-    return html.escape(label.replace('"', "'"))
+    return html.escape(label.replace('"', "'")).replace("{", "").replace("}", "")
 
 def python_to_mermaid(code):
     try:
@@ -24,9 +24,9 @@ class MermaidFlowchartConverter(ast.NodeVisitor):
         self.stack = []
 
     def add_node(self, label):
-        safe_label = sanitize_label(label)
+        label = sanitize_label(label)
         node_name = f"N{self.node_count}"
-        self.lines.append(f'{node_name}["{safe_label}"]')
+        self.lines.append(f'{node_name}["{label}"]')
         if self.prev_node is not None:
             self.lines.append(f"{self.prev_node} --> {node_name}")
         self.prev_node = node_name
@@ -37,13 +37,19 @@ class MermaidFlowchartConverter(ast.NodeVisitor):
         self.add_node(ast.unparse(node))
 
     def visit_Expr(self, node):
-        self.add_node(ast.unparse(node))
+        try:
+            code_str = ast.unparse(node)
+        except Exception:
+            code_str = "Expression"
+        self.add_node(code_str)
+
+    def visit_Call(self, node):
+        self.add_node(f"Call: {ast.unparse(node)}")
 
     def visit_If(self, node):
         cond = f"If: {ast.unparse(node.test)}?"
         if_node = self.add_node(cond)
 
-        # Save previous node
         original_prev = self.prev_node
 
         # True branch
@@ -63,8 +69,7 @@ class MermaidFlowchartConverter(ast.NodeVisitor):
         else:
             false_end = if_node
 
-        # Reconnect flow
-        self.prev_node = if_node  # Allow next node to link from if-node or both branches
+        self.prev_node = if_node
 
     def visit_While(self, node):
         loop_cond = f"While: {ast.unparse(node.test)}?"
@@ -77,9 +82,8 @@ class MermaidFlowchartConverter(ast.NodeVisitor):
             self.visit(stmt)
         self.lines.append(f"{self.prev_node} --> {loop_node}")  # Loop back
 
-        # False condition exit
         self.lines.append(f"{loop_node} -- False --> N{self.node_count}")
-        self.prev_node = loop_node  # Continue from here after loop
+        self.prev_node = loop_node
 
     def visit_For(self, node):
         loop_label = f"For: {ast.unparse(node.target)} in {ast.unparse(node.iter)}"
