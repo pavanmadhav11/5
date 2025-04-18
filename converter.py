@@ -79,3 +79,4 @@ class MermaidFlowchartConverter(ast.NodeVisitor):
 
     def generate(self):
         return "\n".join(self.lines)
+ 
