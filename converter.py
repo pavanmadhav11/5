@@ -77,6 +77,9 @@ class MermaidFlowchartConverter(ast.NodeVisitor):
     def visit_Return(self, node):
         self.add_node(f"Return {ast.unparse(node.value)}")
 
+    def visit_Call(self, node):
+        # For function calls like print()
+        self.add_node(f"Call: {ast.unparse(node)}")
+
     def generate(self):
         return "\n".join(self.lines)
- 
