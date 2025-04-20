@@ -4,23 +4,128 @@
     <meta charset="UTF-8">
     <title>Python to Flowchart</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="icon" href="/static/images/pyicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
         mermaid.initialize({ startOnLoad: true });
     </script>
 </head>
 <body>
-    <h1>Python Code to Flowchart</h1>
-    <form method="POST">
-        <textarea name="code" placeholder="Paste Python code here...">{{ code }}</textarea><br>
-        <button type="submit">Generate Flowchart</button>
-    </form>
+    <nav>
+        <img src="/static/images/PYLOGO.png" alt="" class="logo">
+        <div class="flex-row">
+            <button id="downloadpng">Download as Png</button>
+            <button id="downloadpdf">Download as Pdf</button>
+        </div>
+    </nav>
+    <h2 class="heading">Enter your Python Code Here..</h2>
+    <form method="POST" class="form">
+        <textarea id="code" name="code" placeholder="Paste Python code here...
 
-    {% if mermaid_code %}
-    <h2>Flowchart:</h2>
-    <div class="mermaid">
-        {{ mermaid_code }}
+ex:
+def factorial(n):
+    if n == 0:
+        return 1
+    else:
+        return n * factorial(n - 1)        ">{{ code }}</textarea><br>
+        <button type="submit" class="submit" id="submit">Generate Flowchart &nbsp;<i class="fa-solid fa-chart-diagram"></i></button>
+    </form>
+    <h2 class="heading">Flowchart:</h2>
+    <div id="flowchart-container">
+        {% if mermaid_code %}
+            <div class="mermaid" id="mermaid">
+                {{ mermaid_code }}
+            </div>
+            <script type="module">
+                // Re-run Mermaid after dynamic content loads
+                import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+                mermaid.init(undefined, document.getElementById("mermaid"));
+            </script>
+        {% else %}
+            <img src="/static/images/demo.png" alt="Demo Flowchart" style="height: 200px;">
+        {% endif %}
     </div>
-    {% endif %}
+    <h2 class="heading">Explanation:</h2>
+    <div class="explanation-box">
+    {% for paragraph in explanation.split('\n\n') %}
+        <div class="explanation-section">
+            {% if paragraph.startswith('[') %}
+                <div class="explanation-title">{{ paragraph.split(']')[0]|replace('[', '') }}:</div>
+                <div>{{ paragraph.split(']')[1] }}</div>
+            {% else %}
+                <div>{{ paragraph }}</div>
+            {% endif %}
+        </div>
+    {% endfor %}
+    </div>
+    <div class="info-icon"><i id="info" class="fa-solid fa-info"></i></div>
+    <script>
+        code=document.getElementById('code');
+        mermaid=document.getElementById('mermaid');
+
+        document.addEventListener("keydown",function(e){
+            if(e.ctrlKey && e.key=="Enter"){
+                document.getElementById("submit").click();
+                console.log("Submit button clicked");
+            }
+        })
+
+        document.getElementById("downloadpng").addEventListener("click", function () {
+            html2canvas(document.getElementById("mermaid")).then(canvas => {
+                let link = document.createElement("a");
+                link.download = "flowchart.png";
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            });
+        });
+        document.getElementById("downloadpdf").addEventListener("click", async function () {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            const code = document.getElementById("code").value;
+            const lines = code.split("\n");
+            let y = 10;
+            pdf.setFontSize(14);
+            pdf.setFont("helvetica", "bold");
+            pdf.text("Given Code:", 10, y);
+            y += 8;
+            pdf.setFont("Courier", "normal");
+            pdf.setFontSize(10);
+            lines.forEach(line => {
+                if (y > 270) {
+                    pdf.addPage();
+                    y = 10;
+                }
+                pdf.text(line, 10, y);
+                y += 6;
+            });
+            if (y > 250) {
+                pdf.addPage();
+                y = 10;
+            }else{
+                 y += 10;
+            }
+            pdf.setFontSize(14);
+            pdf.setFont("helvetica", "bold");
+            pdf.text("Generated Flowchart:", 10, y);
+            y += 8;
+            const flowchartElement = document.getElementById("mermaid");
+            const canvas = await html2canvas(flowchartElement);
+            const imgData = canvas.toDataURL("image/png");
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const imgProps = pdf.getImageProperties(imgData);
+            const ratio = pageWidth / imgProps.width;
+            const imgHeight = imgProps.height * ratio;
+
+            if (y + imgHeight > 290) {
+                pdf.addPage();
+                y = 10;
+            }
+            pdf.addImage(imgData, 'PNG', 10, y, pageWidth - 20, imgHeight);
+            pdf.save("flowchart.pdf");
+        });
+    </script>
 </body>
 </html>
